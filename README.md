@@ -20,8 +20,8 @@ CPU usage, sales figures, or any other ordered numeric signal.
 
 | Project | Type | Description |
 | --- | --- | --- |
-| [`AIModels`](AIModels/) | Class library (`net5.0`) | Wraps the ML.NET SR-CNN detector. [`SrCnnTrainer`](AIModels/SrCNN/SrCnnTrainer.cs) runs `DetectEntireAnomalyBySrCnn` over the supplied data. |
-| [`MachineLearningAnomalyDetection`](MachineLearningAnomalyDetection/) | ASP.NET Core Web API (`net5.0`) | Exposes the detector over HTTP with Swagger UI. |
+| [`AIModels`](AIModels/) | Class library (`net8.0`) | Wraps the ML.NET SR-CNN detector. [`SrCnnTrainer`](AIModels/SrCNN/SrCnnTrainer.cs) runs `DetectEntireAnomalyBySrCnn` over the supplied data. |
+| [`MachineLearningAnomalyDetection`](MachineLearningAnomalyDetection/) | ASP.NET Core Web API (`net8.0`) | Exposes the detector over HTTP with Swagger UI. Bootstrapped via the minimal hosting model in [`Program.cs`](MachineLearningAnomalyDetection/Program.cs). |
 
 Key types:
 
@@ -32,13 +32,13 @@ Key types:
 
 ## Requirements
 
-- [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (LTS)
 
 NuGet dependencies (restored automatically on build):
 
-- `Microsoft.ML` 1.6.0
-- `Microsoft.ML.TimeSeries` 1.6.0
-- `Swashbuckle.AspNetCore` 5.6.3
+- `Microsoft.ML` 5.0.0
+- `Microsoft.ML.TimeSeries` 5.0.0
+- `Swashbuckle.AspNetCore` 10.2.3
 
 ## Getting started
 

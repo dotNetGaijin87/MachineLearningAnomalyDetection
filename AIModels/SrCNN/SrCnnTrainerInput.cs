@@ -1,7 +1,6 @@
-﻿namespace AIModels.SrCNN
+namespace AIModels.SrCNN;
+
+public class SrCnnTrainerInput
 {
-    public class SrCnnTrainerInput
-    {
-        public double Value { get; set; }
-    }
+    public double Value { get; set; }
 }

@@ -1,10 +1,9 @@
-﻿using Microsoft.ML.Data;
+using Microsoft.ML.Data;
 
-namespace AIModels.SrCNN
+namespace AIModels.SrCNN;
+
+public class SrCnnTrainerOutput
 {
-    public class SrCnnTrainerOutput
-    {
-        [VectorType]
-        public double[] Prediction { get; set; }
-    }
+    [VectorType]
+    public double[] Prediction { get; set; } = default!;
 }

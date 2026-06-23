@@ -1,41 +1,38 @@
-﻿using AIModels.SrCNN;
+using AIModels.SrCNN;
 using MachineLearningAnomalyDetection.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Linq;
 
-namespace MachineLearningAnomalyDetection.Controllers
+namespace MachineLearningAnomalyDetection.Controllers;
+
+[ApiController]
+public class SrCnnAnomalyDetectionController : ControllerBase
 {
-    [ApiController]
-    public class SrCnnAnomalyDetectionController : ControllerBase
+    private readonly ILogger<SrCnnAnomalyDetectionController> _logger;
+    private readonly SrCnnTrainer _srCnnTrainer;
+
+    public SrCnnAnomalyDetectionController(SrCnnTrainer srCnnTrainer, ILogger<SrCnnAnomalyDetectionController> logger)
     {
+        _logger = logger;
+        _srCnnTrainer = srCnnTrainer;
+    }
 
-        private readonly ILogger<SrCnnAnomalyDetectionController> _logger;
-        private readonly SrCnnTrainer _srCnntrainer;
-
-        public SrCnnAnomalyDetectionController(SrCnnTrainer srCnntrainer, ILogger<SrCnnAnomalyDetectionController> logger)
+    [HttpPost("[controller]:Run")]
+    public ActionResult<IEnumerable<SrCnnOutput>> Run(SrCnnInput model)
+    {
+        if (model.Options is null)
         {
-            _logger = logger;
-            _srCnntrainer = srCnntrainer;
+            return BadRequest($"{nameof(model.Options)} is required.");
         }
 
+        var predictions = _srCnnTrainer.Run(model.TrainingData, model.Options);
 
-        [HttpPost("[controller]:Run")]
-        public IEnumerable<SrCnnOutput> Get(SrCnnInput model)
-        {
- 
-            var predictions = _srCnntrainer.Run(model.TrainingData, model.Options);
-
-
-            return predictions
-                    .Select(x => new SrCnnOutput 
-                    {
-                        IsAnomaly = x.Prediction[0],
-                        RawScore = x.Prediction[1],
-                        Mag = x.Prediction[2],
-                    })
-                    .ToList();
-        }
+        return predictions
+            .Select(x => new SrCnnOutput
+            {
+                IsAnomaly = x.Prediction[0],
+                RawScore = x.Prediction[1],
+                Mag = x.Prediction[2],
+            })
+            .ToList();
     }
 }
