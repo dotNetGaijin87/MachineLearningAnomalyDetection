@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MachineLearningAnomalyDetec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIModels", "AIModels\AIModels.csproj", "{69EF3410-0636-46AC-BCB5-D2EE23534026}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MachineLearningAnomalyDetection.Tests", "MachineLearningAnomalyDetection.Tests\MachineLearningAnomalyDetection.Tests.csproj", "{01478848-DF63-42C0-B37C-969D9195245B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{69EF3410-0636-46AC-BCB5-D2EE23534026}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{69EF3410-0636-46AC-BCB5-D2EE23534026}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{69EF3410-0636-46AC-BCB5-D2EE23534026}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01478848-DF63-42C0-B37C-969D9195245B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01478848-DF63-42C0-B37C-969D9195245B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01478848-DF63-42C0-B37C-969D9195245B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01478848-DF63-42C0-B37C-969D9195245B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

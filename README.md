@@ -22,6 +22,7 @@ CPU usage, sales figures, or any other ordered numeric signal.
 | --- | --- | --- |
 | [`AIModels`](AIModels/) | Class library (`net8.0`) | Wraps the ML.NET SR-CNN detector. [`SrCnnTrainer`](AIModels/SrCNN/SrCnnTrainer.cs) runs `DetectEntireAnomalyBySrCnn` over the supplied data. |
 | [`MachineLearningAnomalyDetection`](MachineLearningAnomalyDetection/) | ASP.NET Core Web API (`net8.0`) | Exposes the detector over HTTP with Swagger UI. Bootstrapped via the minimal hosting model in [`Program.cs`](MachineLearningAnomalyDetection/Program.cs). |
+| [`MachineLearningAnomalyDetection.Tests`](MachineLearningAnomalyDetection.Tests/) | xUnit test project (`net8.0`) | Validation unit tests, trainer/behaviour tests, and in-memory API acceptance tests (`WebApplicationFactory`). |
 
 Key types:
 
@@ -123,6 +124,15 @@ A list with one entry per input point:
 | `rawScore` | The raw anomaly score for the point. |
 | `mag` | The spectral-residual magnitude for the point. |
 
+**Validation & errors**
+
+The request is validated at the boundary before it reaches the detector. Invalid input
+returns `400 Bad Request` with a problem-details body (never a `500` with a stack trace):
+
+- `trainingData` must contain between **12** and **100,000** points (SR-CNN requires at least 12).
+- every `value` must be a finite number (no `NaN` / `Infinity`).
+- `threshold` ∈ `[0, 1]`, `sensitivity` ∈ `[0, 100]`, `period` ≥ `0`, and `batchSize` must be `-1` or ≥ `12`.
+
 ### Example request
 
 ```bash
@@ -132,10 +142,20 @@ curl -k -X POST "https://localhost:5001/SrCnnAnomalyDetection:Run" \
         "options": { "threshold": 0.3, "sensitivity": 64, "detectMode": "AnomalyAndMargin" },
         "trainingData": [
           {"value":1},{"value":2},{"value":3},{"value":10},
+          {"value":1},{"value":1},{"value":1},{"value":1},
           {"value":1},{"value":1},{"value":1},{"value":1}
         ]
       }'
 ```
+
+## Running the tests
+
+```bash
+dotnet test
+```
+
+The suite covers boundary validation, the trainer's behaviour and enum mapping, and the
+HTTP endpoint end-to-end (hosted in memory via `WebApplicationFactory`).
 
 ## License
 

@@ -28,3 +28,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Exposed so the test project can host the app in-memory via WebApplicationFactory<Program>.
+public partial class Program;
