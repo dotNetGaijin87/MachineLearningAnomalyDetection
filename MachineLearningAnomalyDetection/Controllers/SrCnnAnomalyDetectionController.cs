@@ -19,12 +19,8 @@ public class SrCnnAnomalyDetectionController : ControllerBase
     [HttpPost("[controller]:Run")]
     public ActionResult<IEnumerable<SrCnnOutput>> Run(SrCnnInput model)
     {
-        if (model.Options is null)
-        {
-            return BadRequest($"{nameof(model.Options)} is required.");
-        }
-
-        var predictions = _srCnnTrainer.Run(model.TrainingData, model.Options);
+        var options = model.Options ?? new SrCnnOptions();
+        var predictions = _srCnnTrainer.Run(model.TrainingData, options);
 
         return predictions
             .Select(x => new SrCnnOutput

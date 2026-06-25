@@ -1,11 +1,10 @@
 using AIModels.SrCNN;
-using Microsoft.ML.TimeSeries;
 
 namespace MachineLearningAnomalyDetection.Models;
 
 public class SrCnnInput
 {
-    public SrCnnEntireAnomalyDetectorOptions? Options { get; set; }
+    public SrCnnOptions? Options { get; set; }
 
     public List<SrCnnTrainerInput> TrainingData { get; set; } = new()
     {

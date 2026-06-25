@@ -90,8 +90,20 @@ Detects anomalies across the entire supplied series.
 }
 ```
 
-`options` maps to ML.NET's [`SrCnnEntireAnomalyDetectorOptions`](https://learn.microsoft.com/dotnet/api/microsoft.ml.timeseries.srcnnentireanomalydetectoroptions).
 `trainingData` is the ordered list of values to evaluate.
+
+`options` is **optional** — omit it to use the defaults below. It is the API's own
+[`SrCnnOptions`](AIModels/SrCNN/SrCnnOptions.cs) contract (not an ML.NET type), mapped onto the
+detector internally so the API stays decoupled from the ML library:
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `threshold` | number | `0.3` | Anomaly threshold in `[0, 1]`; points scoring above it are flagged. |
+| `batchSize` | integer | `2000` | Points processed per batch; `-1` treats the whole series as one batch. |
+| `sensitivity` | number | `70` | Boundary sensitivity in `[0, 100]`; higher widens the expected margin. |
+| `detectMode` | string | `"AnomalyOnly"` | One of `AnomalyOnly`, `AnomalyAndMargin`, `AnomalyAndExpectedValue`. |
+| `period` | integer | `0` | Series period; `0` lets the detector infer it. |
+| `deseasonalityMode` | string | `"Stl"` | One of `Stl`, `Mean`, `Median`. |
 
 **Response**
 
