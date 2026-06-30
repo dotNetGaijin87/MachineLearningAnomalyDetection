@@ -37,9 +37,9 @@ public class SrCnnAnomalyDetectionController : ControllerBase
         return predictions
             .Select(x => new SrCnnOutput
             {
-                IsAnomaly = x.Prediction[0],
-                RawScore = x.Prediction[1],
-                Mag = x.Prediction[2],
+                IsAnomaly = x.IsAnomaly,
+                RawScore = x.RawScore,
+                Mag = x.Mag,
             })
             .ToList();
     }
