@@ -39,8 +39,7 @@ public class SrCnnInput : IValidatableObject
                 $"trainingData must not exceed {SrCnnLimits.MaxPoints} points.",
                 nameof(TrainingData));
         }
-
-        if (data is not null)
+        else
         {
             for (var i = 0; i < data.Count; i++)
             {
