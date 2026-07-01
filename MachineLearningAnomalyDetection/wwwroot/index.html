@@ -14,6 +14,8 @@
     .controls label { display: flex; flex-direction: column; font-size: .8rem; gap: 4px; }
     input, select { padding: 4px 6px; }
     button { padding: 8px 18px; font-size: 1rem; cursor: pointer; }
+    button.secondary { padding: 6px 12px; font-size: .85rem; }
+    .muted { color: #888; font-size: .8rem; align-self: center; }
     #status { margin: 12px 0; min-height: 1.2em; }
     #status.error { color: #c0392b; white-space: pre-wrap; }
     canvas { max-width: 100%; }
@@ -25,11 +27,32 @@
 </head>
 <body>
   <h1>SR-CNN Anomaly Detection</h1>
-  <p class="lede">Enter a numeric time series, then detect anomalies. Flagged points are red on the
-    chart; the model's raw anomaly score is drawn against the right-hand axis.</p>
+  <p class="lede">Load or paste a numeric time series, then detect anomalies. Flagged points are red
+    on the chart; the model's raw anomaly score is drawn against the right-hand axis.</p>
 
   <label for="series"><strong>Series</strong> — comma, space or newline separated (at least 12 points)</label>
   <textarea id="series">1, 2, 3, 10, 1, 1, 1, 1, 1, 1, 1, 1</textarea>
+
+  <div class="controls">
+    <label>Load sample
+      <select id="sample">
+        <option value="">— choose —</option>
+        <option>Single spike</option>
+        <option>Multiple spikes</option>
+        <option>Seasonal + outlier</option>
+        <option>Flat (no anomaly)</option>
+      </select>
+    </label>
+    <label>Import CSV / text
+      <input id="file" type="file" accept=".csv,.txt,text/csv,text/plain" />
+    </label>
+    <label>Saved datasets
+      <select id="saved"></select>
+    </label>
+    <button id="save" class="secondary" type="button">Save…</button>
+    <button id="delete" class="secondary" type="button">Delete</button>
+    <span id="count" class="muted"></span>
+  </div>
 
   <div class="controls">
     <label>Detect mode
@@ -60,6 +83,51 @@
     const parseSeries = (text) => text.split(/[\s,]+/).filter(s => s.length > 0).map(Number);
     const isAnomaly = (p) => p.isAnomaly >= 0.5;
 
+    // ---- datasets: samples, file import, and saved (localStorage) -----------------------------
+    const samples = {
+      'Single spike': [1, 2, 3, 10, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1],
+      'Multiple spikes': [5, 5, 5, 5, 5, 5, 16, 5, 5, 5, 5, 5, 5, 5, 5, 5, -3, 5, 5, 5, 5, 5, 5, 5],
+      'Seasonal + outlier': Array.from({ length: 48 }, (_, i) => {
+        const base = 20 + 6 * Math.sin(i * 2 * Math.PI / 12);
+        return i === 30 ? Math.round(base) + 18 : Math.round(base * 10) / 10;
+      }),
+      'Flat (no anomaly)': [5, 5, 6, 5, 4, 5, 5, 6, 5, 5, 4, 5, 5, 6, 5, 5],
+    };
+
+    // A file is usually one value per row or "timestamp,value" per row; take the last numeric
+    // field of each line (skips header rows). Fall back to every numeric token for one-line files.
+    function parseFileContent(text) {
+      const byLine = text.split(/\r?\n/)
+        .map(l => l.trim()).filter(l => l.length > 0)
+        .map(l => l.split(',').pop().trim()).filter(tok => tok.length > 0)
+        .map(Number).filter(n => !Number.isNaN(n));
+      if (byLine.length >= 2) return byLine;
+      return text.split(/[\s,]+/).filter(s => s.length > 0).map(Number).filter(n => !Number.isNaN(n));
+    }
+
+    const STORE_KEY = 'srcnn.datasets';
+    const loadStore = () => { try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch { return {}; } };
+    const saveStore = (o) => localStorage.setItem(STORE_KEY, JSON.stringify(o));
+
+    function refreshSaved() {
+      const sel = $('saved');
+      sel.innerHTML = '';
+      sel.add(new Option('— saved datasets —', ''));
+      for (const name of Object.keys(loadStore())) sel.add(new Option(name, name));
+    }
+
+    function loadSeries(values, autoDetect = true) {
+      $('series').value = values.join(', ');
+      updateCount();
+      if (autoDetect) detect();
+    }
+
+    function updateCount() {
+      const n = parseSeries($('series').value).length;
+      $('count').textContent = `${n} point${n === 1 ? '' : 's'}` + (n < 12 ? ' — need at least 12' : '');
+    }
+
+    // ---- detection ----------------------------------------------------------------------------
     async function detect() {
       const status = $('status');
       status.className = '';
@@ -181,7 +249,51 @@
         `<tbody>${rows}</tbody></table>`;
     }
 
+    // ---- wiring -------------------------------------------------------------------------------
     $('run').addEventListener('click', detect);
+    $('series').addEventListener('input', updateCount);
+
+    $('sample').addEventListener('change', () => {
+      const key = $('sample').value;
+      if (key) loadSeries(samples[key]);
+    });
+
+    $('file').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const values = parseFileContent(await file.text());
+      if (values.length === 0) return showError('No numeric values found in the file.');
+      loadSeries(values);
+      e.target.value = ''; // allow re-selecting the same file
+    });
+
+    $('saved').addEventListener('change', () => {
+      const name = $('saved').value;
+      const store = loadStore();
+      if (name && store[name] != null) { $('series').value = store[name]; updateCount(); detect(); }
+    });
+
+    $('save').addEventListener('click', () => {
+      const name = (prompt('Save this series as:') || '').trim();
+      if (!name) return;
+      const store = loadStore();
+      store[name] = $('series').value.trim();
+      saveStore(store);
+      refreshSaved();
+      $('saved').value = name;
+    });
+
+    $('delete').addEventListener('click', () => {
+      const name = $('saved').value;
+      if (!name) return;
+      const store = loadStore();
+      delete store[name];
+      saveStore(store);
+      refreshSaved();
+    });
+
+    refreshSaved();
+    updateCount();
     detect();
   </script>
 </body>

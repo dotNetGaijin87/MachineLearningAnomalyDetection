@@ -59,12 +59,22 @@ Running the app opens the **visualization page** at the root URL:
 ## Visualization
 
 A self-contained page ([`wwwroot/index.html`](MachineLearningAnomalyDetection/wwwroot/index.html))
-served at the root URL lets you see the model's output without writing any client code. Enter a
+served at the root URL lets you see the model's output without writing any client code. Supply a
 numeric series, pick the detect mode / threshold / sensitivity, and hit **Detect anomalies**:
 
 - the series is plotted as a line, with flagged points drawn in **red**;
 - the model's **raw anomaly score** is plotted against a second axis;
 - a table below lists the raw output (`isAnomaly`, `rawScore`, `mag`) per point.
+
+**Feeding data in** — several ways to build the input series (SR-CNN is unsupervised, so this *is*
+the "training data" it runs over):
+
+- **Sample datasets** — pick a built-in series (single spike, multiple spikes, seasonal + outlier,
+  or a flat no-anomaly control) to explore how the detector responds.
+- **Import CSV / text** — load a file; one value per line, or a `timestamp,value` / `label,value`
+  layout (the last numeric column of each row is used, so headers are skipped).
+- **Saved datasets** — save the current series under a name (kept in your browser's `localStorage`)
+  and reload it later. A live counter shows the point count and the 12-point minimum.
 
 It calls the same [`POST /SrCnnAnomalyDetection:Run`](#post-srcnnanomalydetectionrun) endpoint. The
 chart uses Chart.js from a CDN; if it can't load (e.g. offline), the output table still renders.
