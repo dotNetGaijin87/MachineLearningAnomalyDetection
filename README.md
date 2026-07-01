@@ -51,10 +51,23 @@ dotnet build
 dotnet run --project MachineLearningAnomalyDetection
 ```
 
-Once running, open the Swagger UI to explore and try the API:
+Running the app opens the **visualization page** at the root URL:
 
-- https://localhost:5001/swagger
-- http://localhost:5000/swagger
+- https://localhost:5001/ — enter a series and chart the result (see below)
+- https://localhost:5001/swagger — Swagger UI to explore and try the API
+
+## Visualization
+
+A self-contained page ([`wwwroot/index.html`](MachineLearningAnomalyDetection/wwwroot/index.html))
+served at the root URL lets you see the model's output without writing any client code. Enter a
+numeric series, pick the detect mode / threshold / sensitivity, and hit **Detect anomalies**:
+
+- the series is plotted as a line, with flagged points drawn in **red**;
+- the model's **raw anomaly score** is plotted against a second axis;
+- a table below lists the raw output (`isAnomaly`, `rawScore`, `mag`) per point.
+
+It calls the same [`POST /SrCnnAnomalyDetection:Run`](#post-srcnnanomalydetectionrun) endpoint. The
+chart uses Chart.js from a CDN; if it can't load (e.g. offline), the output table still renders.
 
 ## API
 

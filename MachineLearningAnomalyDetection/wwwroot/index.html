@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SR-CNN Anomaly Detection</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, sans-serif; margin: 0 auto; max-width: 960px; padding: 24px; line-height: 1.5; }
+    h1 { font-size: 1.4rem; margin-bottom: .2rem; }
+    p.lede { margin-top: 0; color: #666; }
+    textarea { width: 100%; box-sizing: border-box; font-family: ui-monospace, monospace; min-height: 72px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; margin: 12px 0; }
+    .controls label { display: flex; flex-direction: column; font-size: .8rem; gap: 4px; }
+    input, select { padding: 4px 6px; }
+    button { padding: 8px 18px; font-size: 1rem; cursor: pointer; }
+    #status { margin: 12px 0; min-height: 1.2em; }
+    #status.error { color: #c0392b; white-space: pre-wrap; }
+    canvas { max-width: 100%; }
+    table { border-collapse: collapse; width: 100%; margin-top: 16px; font-size: .85rem; }
+    th, td { border: 1px solid #8883; padding: 4px 8px; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    tr.anomaly { background: #e74c3c22; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>SR-CNN Anomaly Detection</h1>
+  <p class="lede">Enter a numeric time series, then detect anomalies. Flagged points are red on the
+    chart; the model's raw anomaly score is drawn against the right-hand axis.</p>
+
+  <label for="series"><strong>Series</strong> — comma, space or newline separated (at least 12 points)</label>
+  <textarea id="series">1, 2, 3, 10, 1, 1, 1, 1, 1, 1, 1, 1</textarea>
+
+  <div class="controls">
+    <label>Detect mode
+      <select id="detectMode">
+        <option value="AnomalyOnly">AnomalyOnly</option>
+        <option value="AnomalyAndMargin">AnomalyAndMargin</option>
+        <option value="AnomalyAndExpectedValue">AnomalyAndExpectedValue</option>
+      </select>
+    </label>
+    <label>Threshold
+      <input id="threshold" type="number" step="0.05" min="0" max="1" value="0.3" />
+    </label>
+    <label>Sensitivity
+      <input id="sensitivity" type="number" step="1" min="0" max="100" value="70" />
+    </label>
+    <button id="run" type="button">Detect anomalies</button>
+  </div>
+
+  <div id="status"></div>
+  <canvas id="chart" height="140"></canvas>
+  <div id="tableWrap"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let chart;
+
+    const parseSeries = (text) => text.split(/[\s,]+/).filter(s => s.length > 0).map(Number);
+    const isAnomaly = (p) => p.isAnomaly >= 0.5;
+
+    async function detect() {
+      const status = $('status');
+      status.className = '';
+      status.textContent = 'Detecting…';
+
+      const values = parseSeries($('series').value);
+      if (values.some(Number.isNaN)) {
+        return showError('The series contains a value that is not a number.');
+      }
+
+      const body = {
+        options: {
+          detectMode: $('detectMode').value,
+          threshold: Number($('threshold').value),
+          sensitivity: Number($('sensitivity').value),
+        },
+        trainingData: values.map(v => ({ value: v })),
+      };
+
+      let res;
+      try {
+        // Leading slash is required: "SrCnn...:Run" without it parses the colon as a URL scheme.
+        res = await fetch('/SrCnnAnomalyDetection:Run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      } catch (e) {
+        return showError('Request failed: ' + e.message);
+      }
+
+      if (!res.ok) {
+        const problem = await res.json().catch(() => null);
+        return showError(formatProblem(res.status, problem));
+      }
+
+      const predictions = await res.json();
+      render(values, predictions);
+      const count = predictions.filter(isAnomaly).length;
+      status.textContent = `${predictions.length} points analysed — ${count} ` +
+        (count === 1 ? 'anomaly' : 'anomalies') + ' found.';
+    }
+
+    function showError(message) {
+      const status = $('status');
+      status.className = 'error';
+      status.textContent = message;
+      if (chart) { chart.destroy(); chart = undefined; }
+      $('tableWrap').innerHTML = '';
+    }
+
+    function formatProblem(statusCode, problem) {
+      if (problem && problem.errors) {
+        return `${statusCode}: ` + Object.values(problem.errors).flat().join('\n');
+      }
+      if (problem && (problem.detail || problem.title)) {
+        return `${statusCode}: ${problem.detail || problem.title}`;
+      }
+      return `Request rejected (HTTP ${statusCode}).`;
+    }
+
+    function render(values, predictions) {
+      renderTable(values, predictions);
+      if (typeof Chart === 'undefined') { return; } // chart library unavailable (offline?) — table still shows output
+
+      const anomaly = predictions.map(isAnomaly);
+      const cfg = {
+        type: 'line',
+        data: {
+          labels: values.map((_, i) => i),
+          datasets: [
+            {
+              label: 'Value',
+              data: values,
+              borderColor: '#3498db',
+              yAxisID: 'y',
+              tension: 0.2,
+              pointRadius: anomaly.map(a => a ? 6 : 3),
+              pointBackgroundColor: anomaly.map(a => a ? '#e74c3c' : '#3498db'),
+              pointBorderColor: anomaly.map(a => a ? '#e74c3c' : '#3498db'),
+            },
+            {
+              label: 'Raw score',
+              data: predictions.map(p => p.rawScore),
+              borderColor: '#e67e2288',
+              yAxisID: 'score',
+              tension: 0.2,
+              pointRadius: 0,
+              borderDash: [4, 4],
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          interaction: { intersect: false, mode: 'index' },
+          scales: {
+            y: { title: { display: true, text: 'Value' } },
+            score: {
+              position: 'right', min: 0, max: 1,
+              title: { display: true, text: 'Raw score' },
+              grid: { drawOnChartArea: false },
+            },
+          },
+        },
+      };
+
+      if (chart) chart.destroy();
+      chart = new Chart($('chart'), cfg);
+    }
+
+    function renderTable(values, predictions) {
+      const rows = predictions.map((p, i) => `
+        <tr class="${isAnomaly(p) ? 'anomaly' : ''}">
+          <td>${i}</td><td>${values[i]}</td><td>${isAnomaly(p) ? 'yes' : ''}</td>
+          <td>${p.rawScore.toFixed(4)}</td><td>${p.mag.toFixed(4)}</td>
+        </tr>`).join('');
+      $('tableWrap').innerHTML =
+        '<table><thead><tr><th>#</th><th>Value</th><th>Anomaly</th><th>Raw score</th><th>Mag</th></tr></thead>' +
+        `<tbody>${rows}</tbody></table>`;
+    }
+
+    $('run').addEventListener('click', detect);
+    detect();
+  </script>
+</body>
+</html>
