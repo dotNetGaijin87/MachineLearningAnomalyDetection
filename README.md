@@ -135,9 +135,9 @@ A list with one entry per input point:
 
 ```json
 [
-  { "isAnomaly": 0, "rawScore": 0.0,  "mag": 0.0 },
-  { "isAnomaly": 0, "rawScore": 0.0,  "mag": 0.0 },
-  { "isAnomaly": 1, "rawScore": 0.85, "mag": 0.9 }
+  { "isAnomaly": 0, "rawScore": 0.073, "mag": 0.036 },
+  { "isAnomaly": 0, "rawScore": 0.046, "mag": 0.070 },
+  { "isAnomaly": 1, "rawScore": 0.626, "mag": 0.951 }
 ]
 ```
 
