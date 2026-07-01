@@ -11,7 +11,7 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<MLContext>();
+builder.Services.AddSingleton<MLContext>();
 builder.Services.AddScoped<SrCnnTrainer>();
 
 var app = builder.Build();
